@@ -1,3 +1,6 @@
+/// <reference lib="deno.ns" />
+declare const Deno: any; // Explicitly declare Deno for local TypeScript compilation
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
@@ -24,11 +27,15 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
+    // Add logging for environment variables
+    console.log('Edge Function: SUPABASE_URL:', supabaseUrl ? 'Set' : 'Not Set');
+    console.log('Edge Function: SUPABASE_SERVICE_ROLE_KEY:', supabaseServiceRoleKey ? 'Set' : 'Not Set');
+
     if (!supabaseUrl || !supabaseServiceRoleKey) {
       throw new Error('Supabase URL 或 Service Role Key 未设置。');
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey); // This is the admin client
 
     let userIdToActivate: string | null = null;
     let userEmail: string | null = null;
@@ -60,6 +67,9 @@ serve(async (req) => {
       const newUsername = isEmail ? identifier.split('@')[0] : identifier;
       const tempPassword = Math.random().toString(36).slice(-10); // Generate a temporary password
 
+      // Add logging before creating user
+      console.log(`Attempting to create user with email: ${newEmail}, username: ${newUsername}`);
+      
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: newEmail,
         password: tempPassword,
@@ -72,27 +82,35 @@ serve(async (req) => {
 
       if (authError) {
         console.error('Error creating new auth user:', authError);
-        throw new Error(`创建新用户失败: ${authError.message}`);
+        // Check for duplicate email error specifically
+        if (authError.message.includes('User already registered')) {
+          return new Response(
+            JSON.stringify({ error: `用户 ${identifier} 已注册，请直接为其开通会员。` }),
+            { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        throw new Error(`创建新用户失败: ${authError.message}`); // This is the error message the user is seeing
       }
 
-      userIdToActivate = authData.user?.id || null;
-      userEmail = authData.user?.email || null;
-      userName = newUsername;
-      console.log(`Successfully created new user with ID: ${userIdToActivate}`);
-      // The handle_new_user trigger should automatically create the profile.
-      // We might need a small delay or re-fetch to ensure profile is ready if trigger is async.
-      // For now, assume trigger is fast enough or activate_membership handles missing profile.
+      if (!authData.user) {
+        throw new Error('创建用户成功但未返回用户数据。');
+      }
+      userIdToActivate = authData.user.id;
+      userEmail = authData.user.email;
+      userName = newUsername; // Use the generated username for consistency
+      console.log(`Successfully created new user: ${userName || userEmail} (ID: ${userIdToActivate})`);
     }
 
     if (!userIdToActivate) {
       throw new Error('无法确定用户ID进行会员激活。');
     }
 
-    // 2. 调用 activate_membership 函数
+    // 2. 调用 activate_membership function
+    console.log(`Activating membership for user ID: ${userIdToActivate} with plan ID: ${planId}`);
     const { error: activateError } = await supabase.rpc('activate_membership', {
       p_user_id: userIdToActivate,
       p_plan_id: planId,
-      p_order_id: null, // 手动开通没有订单ID
+      p_order_id: null, // No order ID for manual activation
     });
 
     if (activateError) {
@@ -100,6 +118,7 @@ serve(async (req) => {
       throw new Error(`开通会员失败: ${activateError.message}`);
     }
 
+    console.log(`Membership successfully activated for user ${userName || userEmail}.`);
     return new Response(
       JSON.stringify({ success: true, message: `已成功为用户 ${userName || userEmail} 开通会员。`, userId: userIdToActivate }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
