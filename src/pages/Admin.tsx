@@ -107,7 +107,7 @@ const Admin = () => {
 
     try {
       // Call the new Edge Function
-      const response = await fetch('/functions/v1/admin-activate-membership', {
+      const response = await fetch('/functions/v1/manual-activate-membership', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
