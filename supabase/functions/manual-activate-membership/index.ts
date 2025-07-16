@@ -1,5 +1,6 @@
 /// <reference lib="deno.ns" />
-declare const Deno: any; // Explicitly declare Deno for local TypeScript compilation
+/// <reference types="https://deno.land/std@0.190.0/http/server.d.ts" />
+/// <reference types="https://esm.sh/@supabase/supabase-js@2.45.0/dist/index.d.ts" />
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
@@ -27,9 +28,8 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    // Add logging for environment variables
-    console.log('Edge Function: SUPABASE_URL:', supabaseUrl ? 'Set' : 'Not Set');
-    console.log('Edge Function: SUPABASE_SERVICE_ROLE_KEY:', supabaseServiceRoleKey ? 'Set' : 'Not Set');
+    // DEBUG: 临时日志输出，用于验证 SUPABASE_SERVICE_ROLE_KEY
+    console.log('Edge Function DEBUG: SUPABASE_SERVICE_ROLE_KEY (first 10 chars):', supabaseServiceRoleKey ? supabaseServiceRoleKey.substring(0, 10) + '...' : 'Not Set');
 
     if (!supabaseUrl || !supabaseServiceRoleKey) {
       throw new Error('Supabase URL 或 Service Role Key 未设置。');
