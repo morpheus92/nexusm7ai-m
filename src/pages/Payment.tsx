@@ -229,12 +229,10 @@ const Payment = () => {
     setPaymentStatus('idle');
   };
 
-  const getPlanPeriod = (durationDays: number | null, planName: string) => {
+  const getPlanPeriod = (durationMonths: number, planName: string) => {
     if (planName === '永久会员' || planName === '代理会员') return '/永久';
-    if (durationDays === 365) return '/年';
-    if (durationDays === 30) return '/月'; // Assuming 30 days for monthly if applicable
-    if (durationDays === 7) return '/周'; // Assuming 7 days for weekly if applicable
-    if (durationDays === 3) return '/3天'; // Assuming 3 days for 3-day trial
+    if (durationMonths === 12) return '/年';
+    if (durationMonths === 1) return '/月';
     return '';
   };
 
@@ -335,11 +333,11 @@ const Payment = () => {
                     }`}>
                       ¥{plan.price.toFixed(2)}
                     </span>
-                    <span className="text-gray-400 text-sm ml-2">{getPlanPeriod(plan.duration_days, plan.name)}</span>
+                    <span className="text-gray-400 text-sm ml-2">{getPlanPeriod(plan.duration_months, plan.name)}</span>
                   </div>
                   
                   <div className="text-xs text-gray-500 mb-4">
-                    {plan.duration_days === 365 ? `平均每月仅需 ¥${(plan.price / 12).toFixed(2)}` : ''}
+                    {plan.duration_months === 12 ? `平均每月仅需 ¥${(plan.price / 12).toFixed(2)}` : ''}
                     {plan.name === '永久会员' ? `相当于${(plan.price / 99).toFixed(1)}年年费，超值划算` : ''}
                     {plan.name === '代理会员' ? `推广${Math.ceil(plan.price / (plan.price * 0.3))}单即可回本` : ''}
                   </div>
