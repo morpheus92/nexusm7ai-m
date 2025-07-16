@@ -34,6 +34,7 @@ const Admin = () => {
   // Manual activation form
   const [activationIdentifier, setActivationIdentifier] = useState('');
   const [activationPlanId, setActivationPlanId] = useState<string | null>(null); // Use plan ID
+  const [isActivating, setIsActivating] = useState(false); // New loading state for activation
 
   useEffect(() => {
     const fetchAdminData = async () => {
@@ -102,96 +103,60 @@ const Admin = () => {
       return;
     }
 
-    let targetUser: UserProfile | undefined;
-    // Try to find user by email, username, or ID
-    targetUser = users.find(user =>
-      user.email === activationIdentifier ||
-      user.username === activationIdentifier ||
-      user.id === activationIdentifier
-    );
+    setIsActivating(true); // Start loading
 
-    let userIdToUpdate = targetUser?.id;
-    let userEmailToUpdate = targetUser?.email;
-    let userNameToUpdate = targetUser?.username;
-
-    if (!targetUser) {
-      // If user doesn't exist, create a new one in auth and profiles
-      const isEmail = activationIdentifier.includes('@');
-      // const isPhone = /^1[3-9]\d{9}$/.test(activationIdentifier); // Simple phone validation
-
-      const newEmail = isEmail ? activationIdentifier : `${activationIdentifier}@system.generated`;
-      const newUsername = isEmail ? activationIdentifier.split('@')[0] : activationIdentifier;
-      const tempPassword = Math.random().toString(36).slice(-8); // Generate a temporary password
-
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: newEmail,
-        password: tempPassword,
-        email_confirm: true, // Auto-confirm for admin-created users
-        user_metadata: {
-          username: newUsername,
+    try {
+      // Call the new Edge Function
+      const response = await fetch('/functions/v1/admin-activate-membership', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // No Authorization header needed for anon key, but if you protect the function, add it here
         },
+        body: JSON.stringify({
+          identifier: activationIdentifier,
+          planId: activationPlanId,
+        }),
       });
 
-      if (authError) {
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('Edge Function Error:', result.error);
         toast({
           title: "错误",
-          description: `创建新用户失败: ${authError.message}`,
+          description: result.error || "手动开通会员失败，请重试。",
           variant: "destructive"
         });
         return;
       }
-      userIdToUpdate = authData.user?.id;
-      userEmailToUpdate = authData.user?.email;
-      userNameToUpdate = newUsername;
 
-      // The handle_new_user trigger should create the profile automatically.
-      // We'll refetch profiles to ensure the new user is in our state.
-      const { data: updatedUsers, error: fetchUsersError } = await supabase.from('profiles').select('*');
-      if (fetchUsersError) {
-        console.error('Error refetching users after creation:', fetchUsersError);
+      // Refetch users to update their membership status in the UI
+      const { data: updatedUsers, error: refetchError } = await supabase.from('profiles').select('*');
+      if (refetchError) {
+        console.error('Error refetching users after manual activation:', refetchError);
       } else {
         setUsers(updatedUsers || []);
-        targetUser = updatedUsers?.find(u => u.id === userIdToUpdate);
       }
-    }
 
-    if (!userIdToUpdate) {
-      toast({ title: "错误", description: "无法确定用户ID进行激活。", variant: "destructive" });
-      return;
-    }
+      setActivationIdentifier('');
+      setActivationPlanId(membershipPlans[0]?.id || null); // Reset to default
 
-    // Call the activate_membership function
-    const { error: activateError } = await supabase.rpc('activate_membership', {
-      p_user_id: userIdToUpdate,
-      p_plan_id: activationPlanId,
-      p_order_id: null, // No order ID for manual activation
-    });
+      toast({
+        title: "成功",
+        description: result.message || `已为 ${activationIdentifier} 开通 ${selectedPlan.name} 会员`,
+      });
 
-    if (activateError) {
-      console.error('Error activating membership:', activateError);
+    } catch (error: any) {
+      console.error('Error calling Edge Function:', error);
       toast({
         title: "错误",
-        description: `手动开通会员失败: ${activateError.message}`,
+        description: error.message || "手动开通会员失败，请检查网络或稍后再试。",
         variant: "destructive"
       });
-      return;
+    } finally {
+      setIsActivating(false); // End loading
     }
-
-    // Refetch users to update their membership status in the UI
-    const { data: updatedUsers, error: refetchError } = await supabase.from('profiles').select('*');
-    if (refetchError) {
-      console.error('Error refetching users after manual activation:', refetchError);
-    } else {
-      setUsers(updatedUsers || []);
-    }
-
-    setActivationIdentifier('');
-    setActivationPlanId(membershipPlans[0]?.id || null); // Reset to default
-
-    toast({
-      title: "成功",
-      description: `已为 ${userNameToUpdate || userEmailToUpdate} 开通 ${selectedPlan.name} 会员`,
-    });
   };
 
   const approvePayment = async (orderId: string) => {
@@ -525,10 +490,15 @@ const Admin = () => {
                   <div className="flex items-center justify-center">
                     <Button 
                       onClick={handleManualActivation}
+                      disabled={isActivating} // Disable button while activating
                       className="bg-cyan-600 hover:bg-cyan-700 text-white px-8 py-3"
                     >
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      立即开通
+                      {isActivating ? (
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      ) : (
+                        <UserPlus className="h-4 w-4 mr-2" />
+                      )}
+                      {isActivating ? '开通中...' : '立即开通'}
                     </Button>
                   </div>
                 </div>
