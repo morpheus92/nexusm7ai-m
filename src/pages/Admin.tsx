@@ -106,8 +106,11 @@ const Admin = () => {
     setIsActivating(true); // Start loading
 
     try {
-      // Call the new Edge Function
-      const response = await fetch('/functions/v1/manual-activate-membership', {
+      // Use the full Supabase Edge Function URL
+      const SUPABASE_PROJECT_REF = 'gwueqkusxarhomnabcrg'; // Your Supabase Project ID
+      const EDGE_FUNCTION_URL = `https://${SUPABASE_PROJECT_REF}.supabase.co/functions/v1/manual-activate-membership`;
+
+      const response = await fetch(EDGE_FUNCTION_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
