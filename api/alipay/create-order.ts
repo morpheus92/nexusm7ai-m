@@ -1,29 +1,27 @@
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+// api/alipay/create-order.ts
+// This is an ultra-minimal dummy handler to diagnose Vercel timeout issues.
+// It does not import any external libraries or process any request data.
 
-export default async function handler(req: Request) {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+export default function handler(req: Request) {
+  // Log to confirm function execution start
+  console.log('Alipay Create Order: Ultra-minimal handler started.');
 
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method Not Allowed' }), { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-  }
+  // Define CORS headers
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  };
 
-  try {
-    console.log('Alipay Create Order: Minimal handler executed.');
-    // Always return a hardcoded successful dummy response
-    return new Response(JSON.stringify({ qrCodeUrl: 'https://example.com/minimal-dummy-qr-code.png', orderId: 'minimal_dummy_order_123' }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  } catch (error: any) {
-    console.error('Alipay Create Order: Minimal handler caught unexpected error:', error.message, error.stack);
-    return new Response(JSON.stringify({ error: error.message || 'Internal Server Error (Minimal Dummy)' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
+  // Directly return a simple JSON response
+  return new Response(JSON.stringify({
+    qrCodeUrl: 'https://example.com/ultra-minimal-dummy-qr-code.png',
+    orderId: 'ultra_minimal_dummy_order_123',
+    message: 'This is an ultra-minimal dummy response to test Vercel function execution.'
+  }), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json',
+      ...corsHeaders // Apply CORS headers
+    },
+  });
 }
