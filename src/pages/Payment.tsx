@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom'; // Import useSearchParams
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast"; // Changed import path to use custom hook
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import Navigation from '@/components/Navigation';
 import { CheckCircle, Crown, Sparkles, Star, Zap, Users, X, Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client'; // Import supabase client
-import { Database, Json } from '@/integrations/supabase/types'; // Import Database and Json types
+import { supabase } from '@/integrations/supabase/client';
+import { Database, Json } from '@/integrations/supabase/types';
 
 // Define types for MembershipPlan and Order based on Supabase schema using direct access
 type MembershipPlan = Database['public']['Tables']['membership_plans']['Row'];
@@ -16,15 +16,13 @@ const Payment = () => {
   const { user, isAuthenticated, checkPaymentStatus } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams(); // Hook to read URL parameters
+  const [searchParams] = useSearchParams();
 
   const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null); // Use plan ID
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentQrCodeUrl, setPaymentQrCodeUrl] = useState<string | null>(null); // For QR code if precreate is used
   const [isInitiatingPayment, setIsInitiatingPayment] = useState(false);
-  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null); // This is the `order_number` from our DB
-  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'pending' | 'completed' | 'failed'>('idle'); // Track payment status
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'pending' | 'completed' | 'failed'>('idle');
 
   // Fetch membership plans on component mount
   useEffect(() => {
@@ -33,7 +31,7 @@ const Payment = () => {
         .from('membership_plans')
         .select('*')
         .eq('is_active', true)
-        .order('price', { ascending: true }); // Order by price for display
+        .order('price', { ascending: true });
 
       if (error) {
         console.error('Error fetching membership plans:', error);
@@ -43,11 +41,8 @@ const Payment = () => {
           variant: "destructive",
         });
       } else {
-        // Filter out free plans for public display
         const publicPlans = (data || []).filter(plan => plan.price > 0);
         setMembershipPlans(publicPlans);
-        console.log('Filtered Membership Plans:', publicPlans); // Add this log
-        // Optionally pre-select the cheapest or a specific plan
         if (publicPlans.length > 0) {
           setSelectedPlanId(publicPlans[0].id);
         }
@@ -56,87 +51,7 @@ const Payment = () => {
     fetchPlans();
   }, [toast]);
 
-  // Handle return from Alipay (after payment) - this is for page.pay, might not be strictly needed for precreate
-  useEffect(() => {
-    const tradeStatus = searchParams.get('trade_status');
-    const outTradeNo = searchParams.get('out_trade_no');
-
-    if (tradeStatus === 'TRADE_SUCCESS' && outTradeNo) {
-      toast({
-        title: "支付成功",
-        description: "您的会员已开通，请稍候刷新页面或前往仪表板查看。",
-        variant: "success",
-        duration: 5000,
-      });
-      setPaymentStatus('completed');
-      setCurrentOrderId(outTradeNo);
-      // Clear search params to prevent re-triggering on refresh
-      navigate('/payment', { replace: true });
-    } else if (tradeStatus === 'TRADE_CLOSED' || tradeStatus === 'TRADE_FINISHED') {
-      toast({
-        title: "支付已关闭或完成",
-        description: "您的支付交易已关闭或已完成。",
-        variant: "info",
-        duration: 5000,
-      });
-      setPaymentStatus('failed');
-      navigate('/payment', { replace: true });
-    } else if (searchParams.size > 0) { // If there are any params, but not a success/closed status
-      toast({
-        title: "支付未完成",
-        description: "支付可能未成功，请检查您的支付宝账户或重试。",
-        variant: "destructive",
-        duration: 5000,
-      });
-      setPaymentStatus('failed');
-      navigate('/payment', { replace: true });
-    }
-  }, [searchParams, navigate, toast]);
-
-  // Polling for payment status if an order was initiated
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-
-    if (currentOrderId && paymentStatus === 'pending') {
-      interval = setInterval(async () => {
-        const { data, error } = await supabase
-          .from('orders') // Query the new 'orders' table
-          .select('status')
-          .eq('order_number', currentOrderId) // Use order_number
-          .single();
-
-        if (error) {
-          console.error('Error polling payment status:', error);
-          // Don't stop polling on error, might be transient
-        } else if (data && data.status === 'paid') { // Check for 'paid' status
-          setPaymentStatus('completed');
-          toast({
-            title: "支付成功",
-            description: "您的会员已开通！",
-            variant: "success",
-            duration: 5000,
-          });
-          if (interval) clearInterval(interval);
-          setShowPaymentModal(false); // Close modal on success
-          navigate('/dashboard'); // Redirect to dashboard
-        } else if (data && (data.status === 'failed' || data.status === 'cancelled')) { // Check for 'failed' or 'cancelled'
-          setPaymentStatus('failed');
-          toast({
-            title: "支付失败",
-            description: "您的支付未能完成，请重试。",
-            variant: "destructive",
-            duration: 5000,
-          });
-          if (interval) clearInterval(interval);
-        }
-      }, 3000); // Poll every 3 seconds
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [currentOrderId, paymentStatus, toast, navigate]);
-
+  // Removed useEffect for handling Alipay return and polling payment status
 
   const handleInitiatePayment = async (planId: string) => {
     if (!isAuthenticated || !user) {
@@ -159,73 +74,21 @@ const Payment = () => {
       return;
     }
 
-    setSelectedPlanId(planId); // Set selectedPlanId here for modal display
+    // Temporarily disable payment initiation and show a toast
+    toast({
+      title: "支付功能维护中",
+      description: "当前支付功能正在升级维护，请稍后再试或联系客服。",
+      variant: "info",
+    });
+    // You can optionally set a loading state and then immediately turn it off
     setIsInitiatingPayment(true);
-    setPaymentQrCodeUrl(null);
-    setPaymentStatus('pending');
-    setShowPaymentModal(true); // Show modal immediately
-
-    try {
-      // Call the generate_order_number function from Supabase
-      const { data: orderNumberData, error: orderNumberError } = await supabase.rpc('generate_order_number');
-      if (orderNumberError) {
-        console.error('Error generating order number:', orderNumberError);
-        throw new Error(`Failed to generate order number: ${orderNumberError.message}`);
-      }
-      const generatedOrderNumber = orderNumberData; // Fixed: Changed from generatedOrderData to orderNumberData
-
-      const response = await fetch('/api/alipay/create-order', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: user.id,
-          planId: selectedPlan.id, // Pass plan_id
-          amount: selectedPlan.price,
-          orderNumber: generatedOrderNumber, // Pass generated order number
-          subject: `${selectedPlan.name}购买`,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to initiate Alipay payment');
-      }
-
-      setCurrentOrderId(data.orderId); // Store the generated order ID (order_number)
-
-      if (data.qrCodeUrl) {
-        setPaymentQrCodeUrl(data.qrCodeUrl);
-      } else {
-        throw new Error('No Alipay QR code received.');
-      }
-
-      toast({
-        title: "支付请求已发送",
-        description: "请在弹出的页面或扫码完成支付。",
-      });
-
-    } catch (error: any) {
-      console.error('Error initiating payment:', error);
-      toast({
-        title: "支付发起失败",
-        description: error.message || "无法发起支付，请重试。",
-        variant: "destructive",
-      });
-      setPaymentStatus('failed');
-      setShowPaymentModal(false); // Close modal on failure
-    } finally {
+    setTimeout(() => {
       setIsInitiatingPayment(false);
-    }
+    }, 1000); // Simulate a brief loading
   };
-
 
   const handleClosePaymentModal = () => {
     setShowPaymentModal(false);
-    setPaymentQrCodeUrl(null);
-    setCurrentOrderId(null);
     setPaymentStatus('idle');
   };
 
@@ -308,7 +171,7 @@ const Payment = () => {
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {membershipPlans.map((plan) => (
             <div key={plan.id} className="relative group cursor-pointer transition-all duration-300 hover:scale-102">
-              {plan.name.includes('年度') && ( // Example: Add "推荐" badge for annual plan
+              {plan.name.includes('年度') && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
                   <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-1 rounded-full text-xs font-bold flex items-center shadow-lg">
                     <Sparkles className="w-3 h-3 mr-1" />
@@ -370,7 +233,7 @@ const Payment = () => {
         </div>
       </div>
 
-      {/* Payment Modal */}
+      {/* Payment Modal (simplified, no QR code logic) */}
       {showPaymentModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-gradient-to-br from-gray-900/95 to-gray-800/95 backdrop-blur-xl border border-gray-700 rounded-3xl p-6 max-w-sm w-full relative text-center">
@@ -382,28 +245,17 @@ const Payment = () => {
             </button>
 
             <h3 className="text-xl font-bold text-white mb-4">
-              {paymentStatus === 'pending' ? '正在等待支付...' : 
+              {paymentStatus === 'pending' ? '支付功能维护中' : 
                paymentStatus === 'completed' ? '支付成功！' : 
                '支付失败'}
             </h3>
             
             {paymentStatus === 'pending' && (
               <>
-                {paymentQrCodeUrl ? (
-                  <>
-                    <img src={paymentQrCodeUrl} alt="Alipay QR Code" className="w-48 h-48 mx-auto mb-4 border border-gray-700 rounded-lg" />
-                    <p className="text-gray-300 mb-4">请使用支付宝扫码完成支付。</p>
-                  </>
-                ) : (
-                  <>
-                    <Loader2 className="w-12 h-12 animate-spin text-cyan-400 mx-auto mb-6" />
-                    <p className="text-gray-300 mb-4">正在生成支付二维码...</p>
-                  </>
-                )}
-                <p className="text-gray-400 text-sm">订单号: {currentOrderId}</p>
-                <p className="text-gray-400 text-sm">金额: ¥{membershipPlans.find(p => p.id === selectedPlanId)?.price.toFixed(2) || '0.00'}</p>
+                <Loader2 className="w-12 h-12 animate-spin text-cyan-400 mx-auto mb-6" />
+                <p className="text-gray-300 mb-4">当前支付功能正在升级维护，请稍后再试或联系客服。</p>
                 <p className="text-gray-500 text-xs mt-4">
-                  支付完成后，系统将自动为您开通会员。
+                  感谢您的理解与支持。
                 </p>
               </>
             )}
