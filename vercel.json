@@ -1,5 +1,8 @@
 {
-  "build": {
-    "outputDirectory": "dist"
-  }
+  "version": 2,
+  "framework": "vite",
+  "outputDirectory": "dist",
+  "routes": [
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
 }
