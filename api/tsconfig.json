@@ -9,9 +9,12 @@
     "lib": ["ES2020"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["../src/*"]
+      "@/*": ["../src/*"],
+      // 明确指定 @alipay/mcp-server-alipay 模块的类型声明文件路径
+      "@alipay/mcp-server-alipay": ["./types/alipay.d.ts"]
     },
-    "typeRoots": ["./types", "../node_modules/@types"]
+    "typeRoots": ["./types", "../node_modules/@types"],
+    "moduleResolution": "node"
   },
   "include": ["**/*.ts", "**/*.d.ts"],
   "exclude": ["node_modules"]
