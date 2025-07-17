@@ -1,0 +1,10 @@
+{
+  "functions": {
+    "api/alipay/create-order.ts": {
+      "runtime": "nodejs18.x"
+    },
+    "api/alipay/notify.ts": {
+      "runtime": "nodejs18.x"
+    }
+  }
+}
