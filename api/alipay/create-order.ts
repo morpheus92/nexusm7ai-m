@@ -9,8 +9,7 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use 
 // Ensure environment variables are loaded before creating the client
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error("Environment variables SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY are not set for create-order function.");
-  // In a real production app, you might want to throw an error here to prevent function startup
-  // For now, let's proceed and handle potential nulls later or let the SDK fail.
+  throw new Error("Supabase URL and Service Role Key must be set in the environment variables.");
 }
 
 export const supabase = createClient<Database>(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!); // Use ! as we've logged warning
@@ -24,6 +23,8 @@ const AP_ENCRYPTION_ALGO = process.env.AP_ENCRYPTION_ALGO;
 
 if (!AP_APP_ID || !AP_APP_KEY || !AP_PUB_KEY) {
   console.error("Alipay environment variables AP_APP_ID, AP_APP_KEY, or AP_PUB_KEY are not set for create-order function.");
+  // In a real production app, you might want to throw an error here to prevent function startup
+  // For now, let's proceed and handle potential nulls later or let the SDK fail.
 }
 
 const alipaySdk = new AlipaySdk({
@@ -49,7 +50,6 @@ export default async function handler(req: Request) {
   }
 
   try {
-    // Add more detailed logging for incoming request
     console.log('Alipay Create Order: Incoming POST request.');
     const requestBody = await req.json();
     const { userId, planId, amount, orderNumber, subject } = requestBody;
