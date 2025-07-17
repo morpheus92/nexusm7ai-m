@@ -5,6 +5,7 @@ import path from "path";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  base: './', // 将基础路径设置为相对路径
   server: {
     host: "::",
     port: 8080,
