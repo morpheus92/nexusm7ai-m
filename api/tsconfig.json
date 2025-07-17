@@ -11,7 +11,8 @@
     "paths": {
       "@/*": ["../src/*"]
     },
-    "typeRoots": ["./types", "../node_modules/@types"]
+    "typeRoots": ["./types", "../node_modules/@types"],
+    "moduleResolution": "node" // Explicitly set module resolution
   },
   "include": ["**/*.ts", "**/*.d.ts"],
   "exclude": ["node_modules"]
