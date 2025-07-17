@@ -7,19 +7,29 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseServiceRoleKey) {
-  console.error('Supabase URL or Service Role Key is not set in environment variables.');
+  console.error('Supabase URL or Service Role Key is not set in environment variables for notify function.');
   // In a real scenario, you might want to throw an error or exit process
 }
 
 const supabase = createClient<Database>(supabaseUrl!, supabaseServiceRoleKey!);
 
 // Initialize Alipay SDK with environment variables
+const AP_APP_ID = process.env.AP_APP_ID;
+const AP_APP_KEY = process.env.AP_APP_KEY;
+const AP_PUB_KEY = process.env.AP_PUB_KEY;
+const AP_CURRENT_ENV = process.env.AP_CURRENT_ENV;
+const AP_ENCRYPTION_ALGO = process.env.AP_ENCRYPTION_ALGO;
+
+if (!AP_APP_ID || !AP_APP_KEY || !AP_PUB_KEY) {
+  console.error("Alipay environment variables AP_APP_ID, AP_APP_KEY, or AP_PUB_KEY are not set for notify function.");
+}
+
 const alipaySdk = new AlipaySdk({
-  appId: process.env.AP_APP_ID!,
-  privateKey: process.env.AP_APP_KEY!,
-  alipayPublicKey: process.env.AP_PUB_KEY!,
-  gateway: process.env.AP_CURRENT_ENV === 'sandbox' ? 'https://openapi.alipaydev.com/gateway.do' : 'https://openapi.alipay.com/gateway.do',
-  signType: process.env.AP_ENCRYPTION_ALGO || 'RSA2',
+  appId: AP_APP_ID!,
+  privateKey: AP_APP_KEY!,
+  alipayPublicKey: AP_PUB_KEY!,
+  gateway: AP_CURRENT_ENV === 'sandbox' ? 'https://openapi.alipaydev.com/gateway.do' : 'https://openapi.alipay.com/gateway.do',
+  signType: AP_ENCRYPTION_ALGO || 'RSA2',
 });
 
 const corsHeaders = {
@@ -37,6 +47,7 @@ export default async function handler(req: Request) {
   }
 
   try {
+    console.log('Alipay Notify: Incoming POST request.');
     // Parse form data from the request body
     const formData = await req.formData();
     const params: Record<string, string> = {};
@@ -45,9 +56,12 @@ export default async function handler(req: Request) {
         params[key] = value;
       }
     }
+    console.log('Alipay Notify: Received params:', params);
 
     // Verify Alipay signature
+    console.log('Alipay Notify: Verifying signature...');
     const signVerified = alipaySdk.checkRsaSign(params, params.sign, params.charset || 'utf-8', params.sign_type || 'RSA2');
+    console.log('Alipay Notify: Signature verified:', signVerified);
 
     if (!signVerified) {
       console.warn('Alipay Notify: Signature verification failed.');
@@ -64,6 +78,7 @@ export default async function handler(req: Request) {
     }
 
     // Fetch the order from Supabase using our order_number
+    console.log(`Alipay Notify: Fetching order ${outTradeNo} from Supabase...`);
     const { data: order, error: fetchOrderError } = await supabase
       .from('orders') // Query the new 'orders' table
       .select('*')
@@ -71,9 +86,10 @@ export default async function handler(req: Request) {
       .single();
 
     if (fetchOrderError || !order) {
-      console.error('Alipay Notify: Order not found in DB or fetch error:', fetchOrderError);
+      console.error('Alipay Notify: Order not found in DB or fetch error:', fetchOrderError?.message);
       return new Response('fail', { status: 404, headers: corsHeaders });
     }
+    console.log('Alipay Notify: Order found:', order.id, 'Status:', order.status);
 
     if (tradeStatus === 'TRADE_SUCCESS' || tradeStatus === 'TRADE_FINISHED') {
       // Check if order is already paid to prevent duplicate processing
@@ -82,6 +98,7 @@ export default async function handler(req: Request) {
         return new Response('success', { status: 200, headers: corsHeaders });
       }
 
+      console.log(`Alipay Notify: Activating membership for user ${order.user_id} with plan ${order.plan_id}...`);
       // Call the activate_membership function to update user profile and order status
       const { error: activateError } = await supabase.rpc('activate_membership', {
         p_user_id: order.user_id!,
@@ -90,11 +107,12 @@ export default async function handler(req: Request) {
       });
 
       if (activateError) {
-        console.error('Alipay Notify: Error activating membership:', activateError);
+        console.error('Alipay Notify: Error activating membership:', activateError.message);
         // Attempt to update order status to failed if activation fails
         await supabase.from('orders').update({ status: 'failed', alipay_trade_no: alipayTradeNo, updated_at: new Date().toISOString() }).eq('id', order.id);
         return new Response('fail', { status: 500, headers: corsHeaders });
       }
+      console.log('Alipay Notify: Membership activated successfully.');
 
       // Update alipay_trade_no in orders table (status is updated by activate_membership)
       const { error: updateTradeNoError } = await supabase
@@ -103,13 +121,14 @@ export default async function handler(req: Request) {
         .eq('id', order.id);
 
       if (updateTradeNoError) {
-        console.error('Alipay Notify: Error updating trade_no:', updateTradeNoError);
+        console.error('Alipay Notify: Error updating trade_no:', updateTradeNoError.message);
         // This is a non-critical error, still return success to Alipay
       }
 
       console.log(`Alipay Notify: Payment successful for order ${outTradeNo}. User ${order.user_id} membership activated.`);
       return new Response('success', { status: 200, headers: corsHeaders }); // Alipay expects 'success' on successful processing
     } else if (tradeStatus === 'TRADE_CLOSED' || tradeStatus === 'TRADE_CANCELED') {
+      console.log(`Alipay Notify: Payment closed/canceled for order ${outTradeNo}.`);
       // Update order status to failed/cancelled
       const { error: updateOrderError } = await supabase
         .from('orders')
@@ -121,16 +140,16 @@ export default async function handler(req: Request) {
         .eq('id', order.id);
 
       if (updateOrderError) {
-        console.error('Alipay Notify: Error updating order status to cancelled:', updateOrderError);
+        console.error('Alipay Notify: Error updating order status to cancelled:', updateOrderError.message);
         return new Response('fail', { status: 500, headers: corsHeaders });
       }
-      console.log(`Alipay Notify: Payment closed/canceled for order ${outTradeNo}.`);
       return new Response('success', { status: 200, headers: corsHeaders });
     }
 
+    console.warn(`Alipay Notify: Unhandled trade_status: ${tradeStatus} for order ${outTradeNo}.`);
     return new Response('fail', { status: 400, headers: corsHeaders }); // Unhandled status
   } catch (error: any) {
-    console.error('Alipay Notify Handler Error:', error.message);
+    console.error('Alipay Notify Handler Error:', error.message, error.stack); // Log stack trace
     return new Response('fail', { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 }
