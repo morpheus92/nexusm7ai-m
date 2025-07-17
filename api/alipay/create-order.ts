@@ -1,39 +1,43 @@
+/// <reference path="../types/alipay.d.ts" />
 import { AlipaySdk } from '@alipay/mcp-server-alipay';
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from '../../src/integrations/supabase/types'; // Adjust path as needed
+import type { Database } from '../../src/integrations/supabase/types';
 
-// Initialize Supabase client for the backend function
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role key for backend operations
+// Declare variables outside to be accessible by the handler
+let supabaseClient: ReturnType<typeof createClient<Database>> | null = null;
+let alipaySdkInstance: AlipaySdk | null = null;
+let initializationError: string | null = null;
 
-// Ensure environment variables are loaded before creating the client
-if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error("Environment variables SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY are not set for create-order function.");
-  throw new Error("Supabase URL and Service Role Key must be set in the environment variables.");
+try {
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error("Supabase URL and Service Role Key environment variables are not set.");
+  }
+  supabaseClient = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+  const AP_APP_ID = process.env.AP_APP_ID;
+  const AP_APP_KEY = process.env.AP_APP_KEY;
+  const AP_PUB_KEY = process.env.AP_PUB_KEY;
+  const AP_CURRENT_ENV = process.env.AP_CURRENT_ENV;
+  const AP_ENCRYPTION_ALGO = process.env.AP_ENCRYPTION_ALGO;
+
+  if (!AP_APP_ID || !AP_APP_KEY || !AP_PUB_KEY) {
+    throw new Error("Alipay environment variables AP_APP_ID, AP_APP_KEY, or AP_PUB_KEY are not set.");
+  }
+
+  alipaySdkInstance = new AlipaySdk({
+    appId: AP_APP_ID,
+    privateKey: AP_APP_KEY,
+    alipayPublicKey: AP_PUB_KEY,
+    gateway: AP_CURRENT_ENV === 'sandbox' ? 'https://openapi.alipaydev.com/gateway.do' : 'https://openapi.alipay.com/gateway.do',
+    signType: AP_ENCRYPTION_ALGO || 'RSA2',
+  });
+} catch (error: any) {
+  console.error('Serverless Function Initialization Error:', error.message, error.stack);
+  initializationError = `Server initialization failed: ${error.message}`;
 }
-
-export const supabase = createClient<Database>(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!); // Use ! as we've logged warning
-
-// Initialize Alipay SDK with environment variables
-const AP_APP_ID = process.env.AP_APP_ID;
-const AP_APP_KEY = process.env.AP_APP_KEY;
-const AP_PUB_KEY = process.env.AP_PUB_KEY;
-const AP_CURRENT_ENV = process.env.AP_CURRENT_ENV;
-const AP_ENCRYPTION_ALGO = process.env.AP_ENCRYPTION_ALGO;
-
-if (!AP_APP_ID || !AP_APP_KEY || !AP_PUB_KEY) {
-  console.error("Alipay environment variables AP_APP_ID, AP_APP_KEY, or AP_PUB_KEY are not set for create-order function.");
-  // In a real production app, you might want to throw an error here to prevent function startup
-  // For now, let's proceed and handle potential nulls later or let the SDK fail.
-}
-
-const alipaySdk = new AlipaySdk({
-  appId: AP_APP_ID!,
-  privateKey: AP_APP_KEY!,
-  alipayPublicKey: AP_PUB_KEY!,
-  gateway: AP_CURRENT_ENV === 'sandbox' ? 'https://openapi.alipaydev.com/gateway.do' : 'https://openapi.alipay.com/gateway.do',
-  signType: AP_ENCRYPTION_ALGO || 'RSA2',
-});
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -41,6 +45,23 @@ const corsHeaders = {
 };
 
 export default async function handler(req: Request) {
+  // If initialization failed, return an error immediately
+  if (initializationError) {
+    return new Response(JSON.stringify({ error: initializationError }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  // Ensure clients are available (should be if no initializationError)
+  if (!alipaySdkInstance || !supabaseClient) {
+    // This case should ideally not be hit if initializationError is handled, but as a fallback
+    return new Response(JSON.stringify({ error: 'Internal server error: SDKs not initialized.' }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -62,7 +83,7 @@ export default async function handler(req: Request) {
 
     // 1. Create a pending order in Supabase
     console.log('Attempting to insert order into Supabase...');
-    const { data: newOrder, error: insertError } = await supabase
+    const { data: newOrder, error: insertError } = await supabaseClient // Use supabaseClient
       .from('orders')
       .insert({
         user_id: userId,
@@ -86,7 +107,7 @@ export default async function handler(req: Request) {
 
     // 2. Call Alipay trade.precreate API
     console.log('Calling Alipay trade.precreate...');
-    const result = await alipaySdk.exec('alipay.trade.precreate', {
+    const result = await alipaySdkInstance.exec('alipay.trade.precreate', { // Use alipaySdkInstance
       notifyUrl: notifyUrl,
       bizContent: {
         outTradeNo: orderNumber, // Our unique order number
@@ -99,7 +120,7 @@ export default async function handler(req: Request) {
     if (result.code !== '10000') {
       console.error('Alipay Precreate Error:', result.msg, result.subMsg);
       // Update order status to failed if Alipay call fails
-      await supabase.from('orders').update({ status: 'failed', updated_at: new Date().toISOString() }).eq('id', newOrder.id);
+      await supabaseClient.from('orders').update({ status: 'failed', updated_at: new Date().toISOString() }).eq('id', newOrder.id); // Use supabaseClient
       throw new Error(`Alipay precreate failed: ${result.msg} - ${result.subMsg || ''}`);
     }
 
