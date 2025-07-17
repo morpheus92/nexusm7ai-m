@@ -6,11 +6,10 @@
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true,
-    "lib": ["ES2020"],
+    "lib": ["ES2020", "DOM"], // 添加 "DOM" 以包含 Web API 类型
     "baseUrl": ".",
     "paths": {
       "@/*": ["../src/*"],
-      // 明确指定 @alipay/mcp-server-alipay 模块的类型声明文件路径
       "@alipay/mcp-server-alipay": ["./types/alipay.d.ts"]
     },
     "typeRoots": ["./types", "../node_modules/@types"],
