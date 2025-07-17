@@ -1,4 +1,6 @@
 {
+  "framework": "vite",
+  "outputDirectory": "dist",
   "functions": {
     "api/**/*.ts": {
       "runtime": "@vercel/node@18.x"
