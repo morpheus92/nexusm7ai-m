@@ -1,32 +1,25 @@
-/// <reference lib="deno.ns" />
-declare const Deno: any; // Explicitly declare Deno for local TypeScript compilation
-
 import { AlipaySdk } from '@alipay/mcp-server-alipay';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../../src/integrations/supabase/types'; // Adjust path as needed
 
 // Initialize Supabase client for the backend function
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'); // Use service role key for backend operations
-
-// Add logging to see what values are being read
-console.log('DEBUG: SUPABASE_URL:', SUPABASE_URL);
-console.log('DEBUG: SUPABASE_SERVICE_ROLE_KEY:', SUPABASE_SERVICE_ROLE_KEY ? 'Set' : 'Not Set');
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role key for backend operations
 
 // Ensure environment variables are loaded before creating the client
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error("Supabase URL and Service Role Key must be set in the .env file. Please check SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
+  throw new Error("Supabase URL and Service Role Key must be set in the environment variables.");
 }
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 // Initialize Alipay SDK with environment variables
 const alipaySdk = new AlipaySdk({
-  appId: Deno.env.get('AP_APP_ID')!,
-  privateKey: Deno.env.get('AP_APP_KEY')!,
-  alipayPublicKey: Deno.env.get('AP_PUB_KEY')!,
-  gateway: Deno.env.get('AP_CURRENT_ENV') === 'sandbox' ? 'https://openapi.alipaydev.com/gateway.do' : 'https://openapi.alipay.com/gateway.do',
-  signType: Deno.env.get('AP_ENCRYPTION_ALGO') || 'RSA2',
+  appId: process.env.AP_APP_ID!,
+  privateKey: process.env.AP_APP_KEY!,
+  alipayPublicKey: process.env.AP_PUB_KEY!,
+  gateway: process.env.AP_CURRENT_ENV === 'sandbox' ? 'https://openapi.alipaydev.com/gateway.do' : 'https://openapi.alipay.com/gateway.do',
+  signType: process.env.AP_ENCRYPTION_ALGO || 'RSA2',
 });
 
 const corsHeaders = {
@@ -69,8 +62,7 @@ export default async function handler(req: Request) {
     }
 
     // Determine the notify_url based on the environment
-    // In a real deployment, this should be your Vercel deployment URL + /api/alipay/notify
-    const notifyUrl = Deno.env.get('VERCEL_URL') ? `https://${Deno.env.get('VERCEL_URL')}/api/alipay/notify` : 'http://localhost:3000/api/alipay/notify'; // Adjust port if needed
+    const notifyUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}/api/alipay/notify` : 'http://localhost:3000/api/alipay/notify'; // Adjust port if needed
 
     console.log('Alipay Notify URL:', notifyUrl);
 

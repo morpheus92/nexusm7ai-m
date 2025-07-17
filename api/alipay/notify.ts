@@ -1,13 +1,10 @@
-/// <reference lib="deno.ns" />
-declare const Deno: any; // Explicitly declare Deno for local TypeScript compilation
-
 import { AlipaySdk } from '@alipay/mcp-server-alipay';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../../src/integrations/supabase/types'; // Adjust path as needed
 
 // Initialize Supabase client for the backend function
-const supabaseUrl = Deno.env.get('SUPABASE_URL');
-const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseServiceRoleKey) {
   console.error('Supabase URL or Service Role Key is not set in environment variables.');
@@ -18,11 +15,11 @@ const supabase = createClient<Database>(supabaseUrl!, supabaseServiceRoleKey!);
 
 // Initialize Alipay SDK with environment variables
 const alipaySdk = new AlipaySdk({
-  appId: Deno.env.get('AP_APP_ID')!,
-  privateKey: Deno.env.get('AP_APP_KEY')!,
-  alipayPublicKey: Deno.env.get('AP_PUB_KEY')!,
-  gateway: Deno.env.get('AP_CURRENT_ENV') === 'sandbox' ? 'https://openapi.alipaydev.com/gateway.do' : 'https://openapi.alipay.com/gateway.do',
-  signType: Deno.env.get('AP_ENCRYPTION_ALGO') || 'RSA2',
+  appId: process.env.AP_APP_ID!,
+  privateKey: process.env.AP_APP_KEY!,
+  alipayPublicKey: process.env.AP_PUB_KEY!,
+  gateway: process.env.AP_CURRENT_ENV === 'sandbox' ? 'https://openapi.alipaydev.com/gateway.do' : 'https://openapi.alipay.com/gateway.do',
+  signType: process.env.AP_ENCRYPTION_ALGO || 'RSA2',
 });
 
 const corsHeaders = {
