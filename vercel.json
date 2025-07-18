@@ -1,13 +1,8 @@
 {
-  "version": 2,
-  "buildCommand": "npm run build",
-  "build": {
-    "env": {
-      "VITE_SUPABASE_URL": "@vite_supabase_url",
-      "VITE_SUPABASE_ANON_KEY": "@vite_supabase_anon_key",
-      "VITE_GOOGLE_API_KEY": "@vite_google_api_key",
-      "VITE_GROQ_API_KEY": "@vite_groq_api_key",
-      "VITE_OPENROUTER_API_KEY": "@vite_openrouter_api_key"
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
-  }
+  ]
 }
