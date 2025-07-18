@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Crown, Star, Zap, Check, Sparkles } from 'lucide-react'; // Added Sparkles
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
 import PaymentModal from '@/components/PaymentModal';
 import Navigation from '@/components/Navigation';
@@ -14,7 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 type MembershipPlan = Database['public']['Tables']['membership_plans']['Row'];
 
 const Payment = () => {
-  const { user, isAuthenticated, checkPaymentStatus, userProfile } = useAuth();
+  const { userProfile } = useAuth(); // Removed user, isAuthenticated, checkPaymentStatus
   const { toast } = useToast();
 
   const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);

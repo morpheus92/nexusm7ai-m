@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { MessageCircle, Bot, User, Sparkles } from 'lucide-react';
 
 const AIDemo = () => {

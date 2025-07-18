@@ -1,4 +1,4 @@
-import React, { ReactNode, useState, useEffect } from 'react';
+import React, { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,14 +6,14 @@ import { useToast } from "@/hooks/use-toast";
 
 interface PaymentCheckProps {
   children: ReactNode;
-  featureType: 'chat' | 'image' | 'voice';
+  featureType: 'chat' | 'image' | 'voice'; // Keep featureType in interface for clarity
 }
 
-const PaymentCheck = ({ children, featureType }: PaymentCheckProps) => {
+const PaymentCheck = ({ children }: PaymentCheckProps) => { // Removed featureType from destructuring
   const { isAuthenticated, user, checkPaymentStatus } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  
+  const { toast } = useToast(); // Keep toast as it's used for messages
+
   const getTotalUsage = () => {
     if (!isAuthenticated || !user?.id) return 0;
     const usage = JSON.parse(localStorage.getItem(`nexusAi_usage_${user.id}`) || '{"used": 0}');
@@ -22,7 +22,8 @@ const PaymentCheck = ({ children, featureType }: PaymentCheckProps) => {
 
   const remainingUsage = 10 - getTotalUsage();
 
-  useEffect(() => {
+  // useEffect to initialize usage if not present
+  React.useEffect(() => {
     if (isAuthenticated && user?.id) {
       const usage = localStorage.getItem(`nexusAi_usage_${user.id}`);
       if (!usage) {

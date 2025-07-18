@@ -379,7 +379,6 @@ const Chat = () => {
     setInput(''); // Clear input field
 
     try {
-      let finalPrompt = input;
       let systemContext = DEFAULT_ROLES.find(role => role.name === selectedRole)?.prompt || DEFAULT_ROLES[2].prompt; // Default to General AI Assistant if no role selected
 
       // If a role is selected, use its prompt as system context

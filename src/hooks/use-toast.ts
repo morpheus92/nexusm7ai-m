@@ -1,5 +1,4 @@
 import { toast as sonnerToast } from "sonner";
-import { useState, useEffect } from "react";
 
 type ToastVariant = "default" | "destructive" | "success" | "warning" | "info";
 
@@ -30,7 +29,7 @@ export const toast = ({
     variant === "destructive" ? "error" :
     variant === "success" ? "success" : 
     variant === "warning" ? "warning" :
-    variant === "info" ? "info" : "default";
+    variant === "info" ? "info" : "message"; // Map 'default' to 'message' for sonnerToast
 
   return sonnerToast[type](title, {
     description,

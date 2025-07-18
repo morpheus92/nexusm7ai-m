@@ -92,35 +92,22 @@ const ChatMain: React.FC<ChatMainProps> = ({
             onChange={(e) => onModelChange(e.target.value)}
             className="bg-[#1a2740] text-white border border-[#203042]/60 rounded-lg px-3 py-2 text-sm"
           >
-            {AI_MODELS.reduce((groups: any, model) => {
-              if (!groups[model.group]) {
-                groups[model.group] = [];
+            {Object.entries(AI_MODELS.reduce((groups: Record<string, any[]>, model) => {
+              const groupName = model.group || "Other"; // Provide a default for group
+              if (!groups[groupName]) {
+                groups[groupName] = [];
               }
-              groups[model.group].push(model);
+              groups[groupName].push(model);
               return groups;
-            }, {}).map ? 
-              Object.entries(AI_MODELS.reduce((groups: any, model) => {
-                if (!groups[model.group]) {
-                  groups[model.group] = [];
-                }
-                groups[model.group].push(model);
-                return groups;
-              }, {})).map(([group, models]: any) => (
-                <optgroup key={group} label={group}>
-                  {models.map((model: any) => (
-                    <option key={model.id} value={model.id}>
-                      {model.name}
-                    </option>
-                  ))}
-                </optgroup>
-              ))
-            : 
-              AI_MODELS.map((model) => (
-                <option key={model.id} value={model.id}>
-                  {model.name}
-                </option>
-              ))
-            }
+            }, {})).map(([group, models]: [string, any[]]) => (
+              <optgroup key={group} label={group}>
+                {models.map((model: any) => (
+                  <option key={model.id} value={model.id}>
+                    {model.name}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
           </select>
           <Button
             onClick={switchRandomModel}

@@ -4,7 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import Navigation from '@/components/Navigation';
-import { Send, Image as ImageIcon, Sparkles, Camera, RotateCcw, Download, Video, ChevronDown, Shuffle } from 'lucide-react';
+import { Image as ImageIcon, Sparkles, RotateCcw, Download, Video, Shuffle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -1049,7 +1049,7 @@ const ImagePage = () => {
                                  <>
                                     <img
                                        src={generatedImage.imageUrl}
-                                       alt="Generated image"
+                                       alt="Generated"
                                        className="max-w-full max-h-[400px] object-contain rounded-lg shadow-xl mb-4"
                                     />
                                     <p className="text-gray-300 text-sm mb-2 text-center line-clamp-3">{generatedImage.prompt}</p>

@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import Navigation from '@/components/Navigation';
-import { CheckCircle, Crown, Sparkles, Star, Zap, Users, X, Loader2 } from 'lucide-react';
+import { CheckCircle, Crown, Sparkles, Star, Zap, Loader2, X } from 'lucide-react'; // Added X for modal close
 import { supabase } from '@/integrations/supabase/client';
-import { Database, Json } from '@/integrations/supabase/types';
+import { Database } from '@/integrations/supabase/types';
 
 // Define types for MembershipPlan and Order based on Supabase schema using direct access
 type MembershipPlan = Database['public']['Tables']['membership_plans']['Row'];
 type Order = Database['public']['Tables']['orders']['Row'];
 
 const Payment = () => {
-  const { user, isAuthenticated, checkPaymentStatus } = useAuth();
+  const { user, isAuthenticated } = useAuth(); // Removed checkPaymentStatus as it's not used here
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  // const [searchParams] = useSearchParams(); // searchParams is declared but not used, removed
 
   const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);

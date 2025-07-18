@@ -1,6 +1,5 @@
-import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, MessageSquare, Image, Volume2, Settings, Users, CreditCard, LogOut } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Image, Volume2, Settings, Users, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import GradientLogo from '@/components/GradientLogo';
