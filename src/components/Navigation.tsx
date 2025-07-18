@@ -42,6 +42,12 @@ const Navigation = () => {
         return '年会员';
       }
     }
+    if (userProfile.membership_type === 'free_trial' && userProfile.membership_expires_at) {
+      const expiryDate = new Date(userProfile.membership_expires_at);
+      if (expiryDate > new Date()) {
+        return '免费体验中';
+      }
+    }
     return '免费用户';
   };
 

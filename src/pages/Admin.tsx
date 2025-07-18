@@ -12,6 +12,7 @@ import Navigation from "@/components/Navigation";
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types'; // Import Database type
 import { TableRow, TableCell } from "@/components/ui/table";
+import PaymentConfig from '@/components/PaymentConfig'; // Import PaymentConfig
 
 // Define types based on Supabase tables using direct access
 type UserProfile = Database['public']['Tables']['profiles']['Row'];
@@ -262,7 +263,17 @@ const Admin = () => {
                 <UserPlus className="inline mr-2 h-4 w-4" />
                 手动开通
               </button>
-              {/* Removed Alipay config tab */}
+              <button
+                onClick={() => setActiveTab('payment-config')}
+                className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                  activeTab === 'payment-config' 
+                    ? 'bg-cyan-600 text-white' 
+                    : 'text-gray-300 hover:text-white hover:bg-[#203042]/60'
+                }`}
+              >
+                <Settings className="inline mr-2 h-4 w-4" />
+                支付配置
+              </button>
             </nav>
           </div>
         </div>
@@ -360,11 +371,13 @@ const Admin = () => {
                               user.membership_type === 'lifetime' ? 'bg-purple-600 text-white' :
                               user.membership_type === 'agent' ? 'bg-orange-600 text-white' :
                               user.membership_type === 'annual' || user.membership_type === 'premium' ? 'bg-blue-600 text-white' :
+                              user.membership_type === 'free_trial' ? 'bg-green-600 text-white' : // Added free_trial style
                               'bg-gray-600 text-white'
                             }`}>
                               {user.membership_type === 'lifetime' ? '永久会员' :
                                user.membership_type === 'agent' ? '代理会员' :
-                               user.membership_type === 'annual' || user.membership_type === 'premium' ? '付费会员' : '免费用户'}
+                               user.membership_type === 'annual' || user.membership_type === 'premium' ? '付费会员' : 
+                               user.membership_type === 'free_trial' ? '免费体验' : '免费用户'}
                             </span>
                           </TableCell>
                           <TableCell className="py-3 px-4 text-white">
@@ -513,6 +526,11 @@ const Admin = () => {
                 </div>
               </CardContent>
             </Card>
+          )}
+
+          {/* 支付配置 */}
+          {activeTab === 'payment-config' && (
+            <PaymentConfig />
           )}
         </div>
       </div>

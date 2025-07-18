@@ -5,6 +5,7 @@ import AdminUserManagement from '@/components/AdminUserManagement';
 import { UserProfile } from '@/contexts/AuthContext'; // Import UserProfile type
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import ExperienceCard from '@/components/ExperienceCard'; // Import ExperienceCard
 
 const DashboardHome = () => {
   const { userProfile } = useAuth();
@@ -62,6 +63,12 @@ const DashboardHome = () => {
         return '年费会员';
       }
     }
+    if (userProfile.membership_type === 'free_trial' && userProfile.membership_expires_at) {
+      const expiryDate = new Date(userProfile.membership_expires_at);
+      if (expiryDate > new Date()) {
+        return '免费体验中';
+      }
+    }
     return '免费用户';
   };
 
@@ -103,6 +110,19 @@ const DashboardHome = () => {
           </div>
         </div>
       </div>
+
+      {/* Experience Card for free users */}
+      {!isAdmin && userProfile.membership_type === 'free' && (
+        <div className="mb-8">
+          <ExperienceCard />
+        </div>
+      )}
+      {/* Display Experience Card if user is on free trial */}
+      {!isAdmin && userProfile.membership_type === 'free_trial' && (
+        <div className="mb-8">
+          <ExperienceCard />
+        </div>
+      )}
 
       {/* 根据用户角色显示不同内容 */}
       {isAdmin ? <AdminUserManagement users={users} setUsers={setUsers} /> : <UserDashboard />}
