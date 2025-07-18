@@ -1,8 +1,8 @@
-import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2, X } from 'lucide-react';
 import { Database } from '@/integrations/supabase/types';
+import React from 'react';
 
 type MembershipPlan = Database['public']['Tables']['membership_plans']['Row'];
 
