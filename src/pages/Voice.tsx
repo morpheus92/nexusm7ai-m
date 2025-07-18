@@ -1,16 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Navigation from '@/components/Navigation';
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { 
-  Volume2, 
   Download, 
   CheckCircle2,
   ArrowLeft,
   Lightbulb, // For intelligent interpretation
   MessageSquare, // For text generation
-  Info // For tooltip
 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast"; // Corrected import path for useToast
 import { useNavigate, Link } from "react-router-dom"; // Import Link

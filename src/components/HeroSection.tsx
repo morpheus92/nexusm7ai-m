@@ -1,13 +1,13 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 // 星空canvas
 const useStars = (canvasRef: React.RefObject<HTMLCanvasElement>, color: string = "#18ffff") => {
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return; // Add null check for canvas
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    if (!ctx) return; // Add null check for ctx
     let w = window.innerWidth, h = window.innerHeight;
     let stars: {
       x: number; y: number; r: number; o: number; twinkle: number;

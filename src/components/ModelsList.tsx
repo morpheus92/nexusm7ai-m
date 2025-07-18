@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowUpRight, Sparkles, Star, Volume2, Zap } from "lucide-react";
+import { Sparkles, Star, Volume2, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useNavigate } from 'react-router-dom';

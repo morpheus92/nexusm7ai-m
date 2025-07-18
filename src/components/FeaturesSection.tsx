@@ -1,4 +1,3 @@
-import React from 'react';
 import { MessageSquare, Palette, Volume2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Link } from 'react-router-dom';

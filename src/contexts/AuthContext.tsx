@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         // 客户端备用逻辑：分两步创建和更新资料
         // 第一步：插入最基本的资料
-        const { data: newProfile, error: insertProfileError } = await supabase
+        const { data: insertedProfile, error: insertProfileError } = await supabase // Renamed newProfile to insertedProfile
           .from('profiles')
           .insert({
             id: userId,

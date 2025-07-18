@@ -1,7 +1,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, X, CheckCircle } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import { Database } from '@/integrations/supabase/types';
 
 type MembershipPlan = Database['public']['Tables']['membership_plans']['Row'];
@@ -10,10 +10,10 @@ interface PaymentModalProps {
   open: boolean;
   onClose: () => void;
   selectedPlan: MembershipPlan | null;
-  onPaymentSuccess: () => void;
+  onPaymentSuccess: () => void; // Keep in interface for external usage
 }
 
-const PaymentModal: React.FC<PaymentModalProps> = ({ open, onClose, selectedPlan, onPaymentSuccess }) => {
+const PaymentModal: React.FC<PaymentModalProps> = ({ open, onClose, selectedPlan }) => { // Removed onPaymentSuccess from destructuring
   // For now, we'll simulate a pending state and then a "maintenance" message.
   // In a real app, this would involve calling a backend API to initiate payment.
   const [paymentStatus, setPaymentStatus] = React.useState<'idle' | 'pending' | 'completed' | 'failed'>('idle');

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useAuth, UserProfile } from '@/contexts/AuthContext'; // Updated import path for UserProfile
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from '@/contexts/AuthContext'; // Updated import path for UserProfile
 import { Menu, X, MessageSquare, Image, Mic, Settings, LogOut, User, Crown } from 'lucide-react';
 
 const Navigation = () => {

@@ -1,4 +1,3 @@
-import React from 'react';
 import { Outlet } from 'react-router-dom';
 import DashboardSidebar from '@/components/DashboardSidebar';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';

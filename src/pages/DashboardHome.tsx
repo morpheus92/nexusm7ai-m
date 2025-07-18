@@ -1,9 +1,8 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import UserDashboard from '@/components/UserDashboard';
 import AdminUserManagement from '@/components/AdminUserManagement';
 import { UserProfile } from '@/contexts/AuthContext'; // Import UserProfile type
-import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import ExperienceCard from '@/components/ExperienceCard'; // Import ExperienceCard
 
@@ -100,7 +99,7 @@ const DashboardHome = () => {
             <div className="text-2xl font-bold text-nexus-cyan mb-1">
               {userProfile.membership_type === 'lifetime' || userProfile.membership_type === 'agent' ? '永久' : isExpired ? '已过期' : '有效'}
             </div>
-            <div className="text-gray-400 text-sm">会员状态</div>
+            <div className="text-gray-400 text-sm">到期时间</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-nexus-cyan mb-1">

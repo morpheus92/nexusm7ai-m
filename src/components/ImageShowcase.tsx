@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Palette, ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Palette, Play, Pause } from 'lucide-react';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, CarouselApi } from "@/components/ui/carousel";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
@@ -145,7 +145,7 @@ const ImageShowcase = () => {
     {
       url: "/lovable-uploads/f0a497f8-ba29-43f4-adf0-7cbe79e589a7.png",
       title: "赛博工作站",
-      description: "未来科技感的办公环境，霓虹灯",
+      description: "赛博朋克风格的办公环境，霓虹灯",
       prompt: "Cyberpunk futuristic workstation, neon lights, high-tech office environment"
     }
   ];
@@ -172,39 +172,7 @@ const ImageShowcase = () => {
     setIsAutoPlaying(!isAutoPlaying);
   };
 
-  const copyPrompt = (prompt: string) => {
-    navigator.clipboard.writeText(prompt);
-    toast({
-      title: "提示词已复制",
-      description: "已复制到剪贴板，可直接用于AI绘画",
-    });
-  };
-
-  const downloadImage = (url: string, title: string) => {
-    console.log(`尝试下载图片: ${url}`); // 添加日志
-    // For local URLs, direct download should work without CORS issues.
-    fetch(url)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.blob();
-      })
-      .then(blob => {
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `${title}.png`; // Assuming PNG
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        toast({ title: "下载成功", description: `${title}.png 已保存` });
-      })
-      .catch(error => {
-        console.error("下载失败:", error);
-        toast({ title: "下载失败", description: "无法下载图像，请尝试在新标签页中打开并保存", variant: "destructive" });
-        window.open(url, '_blank'); // Fallback to opening in new tab
-      });
-  };
+  // Removed copyPrompt and downloadImage functions as they are not used.
 
   return (
     <section className="py-20 px-4 relative overflow-hidden">

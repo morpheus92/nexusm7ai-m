@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { MessageSquare, Trash2, Plus, Bot, Sparkles, ImageIcon } from "lucide-react";
+import { MessageSquare, Trash2, Plus, Bot, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
 import { AI_MODELS } from '@/lib/ai-models'; // Import AI_MODELS from shared file
