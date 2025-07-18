@@ -290,6 +290,7 @@ export type Database = {
           is_active: boolean | null
           name: string
           price: number
+          type: string | null; // Added 'type' property
         }
         Insert: {
           created_at?: string | null
@@ -300,6 +301,7 @@ export type Database = {
           is_active?: boolean | null
           name: string
           price: number
+          type?: string | null; // Added 'type' property
         }
         Update: {
           created_at?: string | null
@@ -310,6 +312,7 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           price?: number
+          type?: string | null; // Added 'type' property
         }
         Relationships: []
       }

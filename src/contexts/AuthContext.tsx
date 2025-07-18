@@ -162,6 +162,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log(`[AuthContext] checkPaymentStatus: User has annual membership. Expiry: ${expiryDate.toLocaleString()}, Is Expired: ${isExpired}.`);
       return !isExpired;
     }
+    // New: Check for free_trial membership
+    if (userProfile.membership_type === 'free_trial' && userProfile.membership_expires_at) {
+      const expiryDate = new Date(userProfile.membership_expires_at);
+      const isExpired = expiryDate < new Date();
+      console.log(`[AuthContext] checkPaymentStatus: User has free trial. Expiry: ${expiryDate.toLocaleString()}, Is Expired: ${isExpired}.`);
+      return !isExpired;
+    }
 
     console.log('[AuthContext] checkPaymentStatus: User is free or membership type not recognized, returning false.');
     return false;
@@ -284,6 +291,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const expiryDate = new Date(userProfile.membership_expires_at);
       const isExpired = expiryDate < new Date();
       console.log(`[AuthContext] hasPermission: User has annual membership. Expiry: ${expiryDate.toLocaleString()}, Is Expired: ${isExpired}.`);
+      return !isExpired;
+    }
+    // New: Check for free_trial membership
+    if (userProfile.membership_type === 'free_trial' && userProfile.membership_expires_at) {
+      const expiryDate = new Date(userProfile.membership_expires_at);
+      const isExpired = expiryDate < new Date();
+      console.log(`[AuthContext] hasPermission: User has free trial. Expiry: ${expiryDate.toLocaleString()}, Is Expired: ${isExpired}.`);
       return !isExpired;
     }
 

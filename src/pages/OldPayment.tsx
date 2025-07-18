@@ -1,26 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { Crown, Star, Zap, Check, Sparkles } from 'lucide-react'; // Added Sparkles
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/components/ui/use-toast';
-import PaymentModal from '@/components/PaymentModal';
-import Navigation from '@/components/Navigation';
-import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
+import Navigation from '@/components/Navigation';
+import { CheckCircle, Crown, Sparkles, Star, Zap, Users, X, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Database, Json } from '@/integrations/supabase/types';
 
 // Define types for MembershipPlan and Order based on Supabase schema using direct access
 type MembershipPlan = Database['public']['Tables']['membership_plans']['Row'];
+type Order = Database['public']['Tables']['orders']['Row'];
 
 const Payment = () => {
-  const { user, isAuthenticated, checkPaymentStatus, userProfile } = useAuth();
+  const { user, isAuthenticated, checkPaymentStatus } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [membershipPlans, setMembershipPlans] = useState<MembershipPlan[]>([]);
-  const [selectedPlan, setSelectedPlan] = useState<MembershipPlan | null>(null);
-  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [currentPlanType, setCurrentPlanType] = useState<string>('free');
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [isInitiatingPayment, setIsInitiatingPayment] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'pending' | 'completed' | 'failed'>('idle');
 
   // Fetch membership plans on component mount
   useEffect(() => {
@@ -42,40 +44,58 @@ const Payment = () => {
         const publicPlans = (data || []).filter(plan => plan.price > 0);
         setMembershipPlans(publicPlans);
         if (publicPlans.length > 0) {
-          setSelectedPlan(publicPlans[0]);
+          setSelectedPlanId(publicPlans[0].id);
         }
       }
     };
     fetchPlans();
   }, [toast]);
 
-  // Update currentPlanType when userProfile changes
-  useEffect(() => {
-    if (userProfile) {
-      setCurrentPlanType(userProfile.membership_type || 'free');
+  // Removed useEffect for handling Alipay return and polling payment status
+
+  const handleInitiatePayment = async (planId: string) => {
+    if (!isAuthenticated || !user) {
+      toast({
+        title: "请先登录",
+        description: "购买会员需要先登录您的账号",
+        variant: "destructive"
+      });
+      navigate('/login');
+      return;
     }
-  }, [userProfile]);
 
-  const handleSelectPlan = (plan: MembershipPlan) => {
-    setSelectedPlan(plan);
-    setPaymentModalOpen(true);
-  };
+    const selectedPlan = membershipPlans.find(p => p.id === planId);
+    if (!selectedPlan) {
+      toast({
+        title: "套餐错误",
+        description: "未找到选定的会员套餐。",
+        variant: "destructive"
+      });
+      return;
+    }
 
-  const handlePaymentSuccess = () => {
+    // Temporarily disable payment initiation and show a toast
     toast({
-      title: "恭喜！升级成功",
-      description: "您的账户已升级，开始享受专业服务吧！",
+      title: "支付功能维护中",
+      description: "当前支付功能正在升级维护，请稍后再试或联系客服。",
+      variant: "info",
     });
+    // You can optionally set a loading state and then immediately turn it off
+    setIsInitiatingPayment(true);
+    setTimeout(() => {
+      setIsInitiatingPayment(false);
+    }, 1000); // Simulate a brief loading
   };
 
-  const handleClosePaymentModal = () => { // Defined handleClosePaymentModal
-    setPaymentModalOpen(false);
+  const handleClosePaymentModal = () => {
+    setShowPaymentModal(false);
+    setPaymentStatus('idle');
   };
 
-  const getPlanPeriod = (plan: MembershipPlan) => {
-    if (plan.name === '永久会员' || plan.name === '代理会员') return '/永久';
-    if (plan.duration_months === 12) return '/年';
-    if (plan.duration_months === 1) return '/月';
+  const getPlanPeriod = (durationMonths: number, planName: string) => {
+    if (planName === '永久会员' || planName === '代理会员') return '/永久';
+    if (durationMonths === 12) return '/年';
+    if (durationMonths === 1) return '/月';
     return '';
   };
 
@@ -87,6 +107,7 @@ const Payment = () => {
   };
 
   const getPlanFeatures = (plan: MembershipPlan) => {
+    // Define features based on plan type/name
     if (plan.name === '年度会员') {
       return [
         '无限制AI对话',
@@ -110,6 +131,12 @@ const Payment = () => {
         '专属代理商后台',
         '营销素材支持',
         '自动分销系统',
+      ];
+    } else if (plan.name.includes('免费体验')) {
+      return [
+        'AI对话（限10次）',
+        'AI绘画（限10次）',
+        'AI语音（限10次）',
       ];
     }
     return [];
@@ -169,7 +196,7 @@ const Payment = () => {
                     }`}>
                       ¥{plan.price.toFixed(2)}
                     </span>
-                    <span className="text-gray-400 text-sm ml-2">{getPlanPeriod(plan)}</span>
+                    <span className="text-gray-400 text-sm ml-2">{getPlanPeriod(plan.duration_months, plan.name)}</span>
                   </div>
                   
                   <div className="text-xs text-gray-500 mb-4">
@@ -182,7 +209,7 @@ const Payment = () => {
                 <div className="space-y-3 mb-6">
                   {getPlanFeatures(plan).map((feature, index) => (
                     <div key={index} className="flex items-center">
-                      <Check className={`w-4 h-4 ${plan.name.includes('年度') ? 'text-purple-400' : 'text-cyan-400'} mr-2 flex-shrink-0`} />
+                      <CheckCircle className={`w-4 h-4 ${plan.name.includes('年度') ? 'text-purple-400' : 'text-cyan-400'} mr-2 flex-shrink-0`} />
                       <span className="text-gray-300 text-sm">{feature}</span>
                     </div>
                   ))}
@@ -190,81 +217,70 @@ const Payment = () => {
                 
                 <div className="text-center">
                   <Button 
-                    onClick={() => handleSelectPlan(plan)}
-                    disabled={currentPlanType === plan.type || (userProfile?.membership_type === 'lifetime' && plan.name !== '代理会员')}
+                    onClick={() => handleInitiatePayment(plan.id)}
+                    disabled={isInitiatingPayment}
                     className={`w-full font-bold py-3 rounded-xl text-sm transition-all duration-300 ${
                       plan.name.includes('年度') ? 'bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white' : 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white'
                     }`}
                   >
-                    {currentPlanType === plan.type ? '当前套餐' : '立即购买'}
+                    {isInitiatingPayment && selectedPlanId === plan.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="w-4 h-4 mr-2" />}
+                    立即购买
                   </Button>
                 </div>
               </div>
             </div>
           ))}
         </div>
-
-        {/* Feature Comparison */}
-        <div className="mt-20 max-w-4xl mx-auto">
-          <Card className="bg-slate-800/50 border-slate-700 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-white text-center text-2xl">功能详细对比</CardTitle>
-              <CardDescription className="text-gray-400 text-center">
-                选择最适合您需求的套餐
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-700">
-                      <th className="text-left py-4 text-white font-semibold">功能</th>
-                      <th className="text-center py-4 text-white font-semibold">年度会员</th>
-                      <th className="text-center py-4 text-white font-semibold">永久会员</th>
-                      <th className="text-center py-4 text-white font-semibold">代理会员</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b border-slate-700">
-                      <td className="py-4 text-gray-300">AI对话次数</td>
-                      <td className="text-center text-green-400">无限</td>
-                      <td className="text-center text-green-400">无限</td>
-                      <td className="text-center text-green-400">无限</td>
-                    </tr>
-                    <tr className="border-b border-slate-700">
-                      <td className="py-4 text-gray-300">专属权限</td>
-                      <td className="text-center text-green-400">Plus权限</td>
-                      <td className="text-center text-green-400">VIP权限</td>
-                      <td className="text-center text-green-400">代理权限</td>
-                    </tr>
-                    <tr className="border-b border-slate-700">
-                      <td className="py-4 text-gray-300">收益分成</td>
-                      <td className="text-center text-gray-500">-</td>
-                      <td className="text-center text-gray-500">-</td>
-                      <td className="text-center text-green-400">30%</td>
-                    </tr>
-                    <tr className="border-b border-slate-700">
-                      <td className="py-4 text-gray-300">使用期限</td>
-                      <td className="text-center text-yellow-400">1年</td>
-                      <td className="text-center text-green-400">永久</td>
-                      <td className="text-center text-green-400">永久</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
       </div>
 
-      {/* Payment Modal */}
-      {selectedPlan && (
-        <PaymentModal
-          open={paymentModalOpen}
-          onClose={handleClosePaymentModal}
-          selectedPlan={selectedPlan}
-          onPaymentSuccess={handlePaymentSuccess}
-        />
+      {/* Payment Modal (simplified, no QR code logic) */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-gray-900/95 to-gray-800/95 backdrop-blur-xl border border-gray-700 rounded-3xl p-6 max-w-sm w-full relative text-center">
+            <button 
+              onClick={handleClosePaymentModal}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-xl font-bold text-white mb-4">
+              {paymentStatus === 'pending' ? '支付功能维护中' : 
+               paymentStatus === 'completed' ? '支付成功！' : 
+               '支付失败'}
+            </h3>
+            
+            {paymentStatus === 'pending' && (
+              <>
+                <Loader2 className="w-12 h-12 animate-spin text-cyan-400 mx-auto mb-6" />
+                <p className="text-gray-300 mb-4">当前支付功能正在升级维护，请稍后再试或联系客服。</p>
+                <p className="text-gray-500 text-xs mt-4">
+                  感谢您的理解与支持。
+                </p>
+              </>
+            )}
+
+            {paymentStatus === 'completed' && (
+              <>
+                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-6" />
+                <p className="text-green-300 text-lg mb-4">您的会员已成功开通！</p>
+                <Button onClick={() => navigate('/dashboard')} className="bg-green-600 hover:bg-green-700">
+                  前往仪表板
+                </Button>
+              </>
+            )}
+
+            {paymentStatus === 'failed' && (
+              <>
+                <X className="w-16 h-16 text-red-500 mx-auto mb-6" />
+                <p className="text-red-300 text-lg mb-4">支付未能完成。</p>
+                <Button onClick={handleClosePaymentModal} className="bg-red-600 hover:bg-red-700">
+                  关闭
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
