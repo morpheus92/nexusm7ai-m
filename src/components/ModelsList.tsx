@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
 import { Sparkles, Star, Volume2, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
