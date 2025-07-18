@@ -4,7 +4,6 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Users, CreditCard, Settings, UserCheck, UserPlus, LayoutDashboard } from 'lucide-react';
@@ -510,7 +509,7 @@ const Admin = () => {
                       className="bg-cyan-600 hover:bg-cyan-700 text-white px-8 py-3"
                     >
                       {isActivating ? (
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       ) : (
                         <UserPlus className="h-4 w-4 mr-2" />
                       )}

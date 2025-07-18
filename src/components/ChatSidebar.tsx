@@ -125,37 +125,22 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
             onChange={e => onModelChange(e.target.value)}
             className="w-full bg-[#151b2a] border border-[#23304d] text-gray-200 py-2.5 px-3 rounded-lg shadow mb-4 focus:outline-none focus:border-cyan-400 text-sm appearance-none relative"
           >
-            {aiModels.reduce((groups: Record<string, any[]>, model) => {
+            {Object.entries(aiModels.reduce((groups: Record<string, any[]>, model) => {
               const groupName = model.group || "Other";
               if (!groups[groupName]) {
                 groups[groupName] = [];
               }
               groups[groupName].push(model);
               return groups;
-            }, {}).map ? 
-              Object.entries(aiModels.reduce((groups: Record<string, any[]>, model) => {
-                const groupName = model.group || "Other";
-                if (!groups[groupName]) {
-                  groups[groupName] = [];
-                }
-                groups[groupName].push(model);
-                return groups;
-              }, {})).map(([group, models]: [string, any[]]) => (
-                <optgroup key={group} label={group}>
-                  {models.map((model) => (
-                    <option key={model.id} value={model.id}>
-                      {model.name}
-                    </option>
-                  ))}
-                </optgroup>
-              ))
-            : 
-              aiModels.map((model) => (
-                <option key={model.id} value={model.id}>
-                  {model.name}
-                </option>
-              ))
-            }
+            }, {})).map(([group, models]: [string, any[]]) => (
+              <optgroup key={group} label={group}>
+                {models.map((model) => (
+                  <option key={model.id} value={model.id}>
+                    {model.name}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
           </select>
           <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
             <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

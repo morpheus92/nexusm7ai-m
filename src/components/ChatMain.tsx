@@ -80,7 +80,7 @@ const ChatMain: React.FC<ChatMainProps> = ({
     <div className="flex-1 flex flex-col w-full min-h-0">
       {/* 顶部标题+装饰 */}
       <div className="py-12 mb-6">
-        <h1 className="text-3xl md::text-4xl font-black bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent text-center drop-shadow-lg tracking-tight">
+        <h1 className="text-3xl md::text-4xl font-black bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent drop-shadow-lg tracking-tight">
           智能创作工作台
         </h1>
         <p className="text-center text-gray-400 mt-3 text-lg">集成15+顶级AI模型，支持对话、绘画、创作一体化体验</p>

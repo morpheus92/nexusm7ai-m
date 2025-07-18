@@ -5,7 +5,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import Navigation from '@/components/Navigation';
 import ChatSidebar from '@/components/ChatSidebar';
-import { Send, Crown, Bot, User, Sparkles, MessageSquare, Trash2, Plus, Mic, MicOff, Image as ImageIcon, Shuffle } from 'lucide-react';
+import { Send, Crown, Sparkles, MessageSquare, ImageIcon } from 'lucide-react'; // Removed Bot, User, Trash2, Plus, Mic, MicOff, Shuffle
 import { Link } from 'react-router-dom';
 import { AI_MODELS } from '@/lib/ai-models'; // Import AI_MODELS from shared file
 
